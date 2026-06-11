@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 面试模拟器 - 终极版 (本地化部署)</title>
+<script src="./marked.min.js"></script>
+<script src="./purify.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --bg-card: #faf7f2;
+    --brown-deep: #2c1f0e;
+    --brown-mid: #5a3e28;
+    --brown-light: #8c6a4a;
+    --accent: #d4622a;
+    --accent-hover: #b8501f;
+    --border: #e0d5c5;
+    --text: #2c1f0e;
+    --text-muted: #7a6550;
+    --success: #4a7c59;
+    --tag-bg: #ede5d8;
+    --ai-bubble: #fff8f3;
+    --user-bubble: #2c1f0e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; padding: 0 0 60px;
+  }
+
+  header { background: var(--brown-deep); padding: 24px 20px 20px; text-align: center; }
+  header .badge {
+    display: inline-block; font-size: 11px; letter-spacing: 0.12em;
+    color: var(--accent); background: rgba(212,98,42,0.12);
+    border: 1px solid rgba(212,98,42,0.3); border-radius: 20px;
+    padding: 3px 10px; margin-bottom: 10px; text-transform: uppercase;
+  }
+  header h1 { font-size: 22px; font-weight: 700; color: #f5f0e8; }
+  header p { font-size: 13px; color: #a89070; margin-top: 6px; }
+
+  .tab-bar {
+    display: flex; background: var(--brown-deep);
+    border-top: 1px solid rgba(255,255,255,0.06); padding: 0 20px;
+  }
+  .tab-btn {
+    flex: 1; padding: 12px 0; background: none; border: none;
+    border-bottom: 2px solid transparent; font-size: 14px; color: #7a6550;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  .main { max-width: 680px; margin: 0 auto; padding: 20px 16px 0; }
+
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px; margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 600; color: var(--brown-mid);
+    letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; display: inline-block; }
+
+  .select-grid { display: grid; gap: 8px; }
+  .select-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .select-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .sel-btn {
+    padding: 10px 8px; border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--bg); font-size: 13px; color: var(--brown-mid);
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .sel-btn.active { border-color: var(--accent); background: rgba(212,98,42,0.07); color: var(--accent); font-weight: 600; }
+  .sel-btn .sel-name { font-weight: 600; display: block; font-size: 13px; }
+  .sel-btn .sel-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag-btn {
+    padding: 6px 14px; border: 1.5px solid var(--border); border-radius: 20px;
+    background: var(--bg); font-size: 13px; color: var(--brown-mid); cursor: pointer; transition: all 0.15s;
+  }
+  .tag-btn.active { border-color: var(--accent); background: rgba(212,98,42,0.07); color: var(--accent); font-weight: 600; }
+  .custom-tag { border-style: dashed; }
+
+  textarea, input[type="text"], input[type="password"], select {
+    width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--bg); font-size: 14px; color: var(--text); font-family: inherit; outline: none; transition: border-color 0.15s;
+  }
+  textarea:focus, input:focus, select:focus { border-color: var(--accent); }
+  textarea { min-height: 80px; resize: vertical; }
+
+  .key-section { border: 1.5px dashed var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+  .key-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .key-title { font-size: 13px; font-weight: 600; color: var(--brown-mid); }
+  .key-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(212,98,42,0.1); color: var(--accent); }
+  .key-input-wrap { position: relative; margin-bottom: 8px; }
+  .key-input-wrap input { padding-right: 70px; }
+  .key-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-muted); cursor: pointer; background: none; border: none; padding: 4px 6px; }
+  .key-toggle:hover { color: var(--accent); }
+  .key-tip { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+  .adv-row { display: flex; gap: 8px; margin-top: 8px; }
+
+  .start-btn {
+    width: 100%; padding: 14px; background: var(--accent); color: #fff;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.15s; letter-spacing: 0.03em; margin-bottom: 20px;
+  }
+  .start-btn:hover:not(:disabled) { background: var(--accent-hover); }
+
+  /* Markdown 样式池 */
+  .md-content { font-size: 14px; line-height: 1.7; word-wrap: break-word; }
+  .md-content p { margin-bottom: 10px; }
+  .md-content code { background: rgba(0,0,0,0.06); padding: 2px 4px; border-radius: 4px; font-family: monospace; color: #c0392b; font-size: 13px; }
+  .md-content pre { background: #2c1f0e; color: #f5f0e8; padding: 12px; border-radius: 8px; overflow-x: auto; margin-bottom: 12px; }
+  .md-content pre code { background: transparent; color: inherit; padding: 0; }
+  .md-content ul, .md-content ol { margin-left: 20px; margin-bottom: 10px; }
+  .md-content h3, .md-content h4 { margin: 16px 0 8px; color: var(--brown-mid); font-size: 15px; font-weight: 600; }
+  .md-content blockquote { border-left: 4px solid var(--accent); padding-left: 10px; color: var(--text-muted); margin-bottom: 10px; background: rgba(212,98,42,0.05); }
+
+  /* 题库模式 */
+  .question-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .q-num { font-size: 12px; font-weight: 600; color: var(--accent); letter-spacing: 0.08em; }
+  .q-type-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--tag-bg); color: var(--brown-mid); }
+  .q-text { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.6; margin-bottom: 16px; }
+  .q-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .q-action-btn { padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 12px; color: var(--brown-mid); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
+  .q-action-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .q-action-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .q-action-btn.primary:hover:not(:disabled) { background: var(--accent-hover); }
+  .q-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .q-ref { background: rgba(74,124,89,0.07); border: 1px solid rgba(74,124,89,0.2); border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #3d6b4a; line-height: 1.7; display: none; margin-top: 12px; }
+  .q-ref.show { display: block; }
+  
+  .ai-review { background: var(--ai-bubble); border: 1px solid rgba(212,98,42,0.2); border-radius: 10px; padding: 14px 16px; margin-top: 12px; display: none; }
+  .ai-review.show { display: block; }
+  .ai-review-header { font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.08em; margin-bottom: 8px; display: flex; justify-content: space-between;}
+  
+  /* 进度条 */
+  .progress-bar-wrap { background: var(--border); border-radius: 4px; height: 4px; margin-bottom: 16px; }
+  .progress-bar { background: var(--accent); height: 4px; border-radius: 4px; transition: width 0.3s; }
+
+  /* 聊天模式 */
+  .chat-info { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 12px; font-size: 13px; color: var(--brown-mid); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .chat-info .info-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+  
+  .chat-window { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; min-height: 400px; max-height: 500px; overflow-y: auto; padding: 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+  .chat-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 14px; text-align: center; }
+  
+  .msg { display: flex; gap: 10px; max-width: 100%; }
+  .msg.user { flex-direction: row-reverse; }
+  .msg-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; font-weight: 700; cursor: pointer;}
+  .ai-avatar { background: var(--accent); color: #fff; }
+  .user-avatar { background: var(--brown-deep); color: #f5f0e8; font-size: 12px; }
+  .msg-bubble { max-width: 85%; padding: 12px 14px; border-radius: 12px; position: relative; }
+  .ai-bubble { background: var(--ai-bubble); border: 1px solid rgba(212,98,42,0.15); color: var(--text); border-radius: 4px 12px 12px 12px; }
+  .user-bubble { background: var(--brown-deep); color: #f5f0e8; border-radius: 12px 4px 12px 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+  
+  .tts-btn { position: absolute; bottom: -20px; left: 0; font-size: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 4px; display: none; }
+  .ai-bubble:hover .tts-btn { display: block; }
+  .tts-btn:hover { color: var(--accent); }
+
+  .chat-input-area { display: flex; gap: 8px; align-items: flex-end; position: relative; }
+  .chat-input-area textarea { flex: 1; min-height: 44px; max-height: 120px; resize: none; padding: 10px 12px; font-size: 14px; }
+  .voice-btn { position: absolute; right: 54px; bottom: 8px; background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer; padding: 4px; transition: color 0.2s; }
+  .voice-btn.recording { color: #c0392b; animation: pulse 1s infinite; }
+  @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+  
+  .send-btn { width: 44px; height: 44px; flex-shrink: 0; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+  .send-btn:hover:not(:disabled) { background: var(--accent-hover); }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  
+  .chat-controls { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .ctrl-btn { padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 12px; color: var(--brown-mid); cursor: pointer; transition: all 0.15s; }
+  .ctrl-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .ctrl-btn.danger:hover:not(:disabled) { border-color: #c0392b; color: #c0392b; }
+  .ctrl-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* 可视化评分卡 */
+  .score-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-top: 16px; display: none; }
+  .score-card.show { display: block; animation: slideUp 0.4s ease-out; }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .score-header { font-size: 16px; font-weight: 700; color: var(--brown-mid); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .score-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .score-label { font-size: 13px; font-weight: 600; color: var(--brown-mid); min-width: 60px; }
+  .score-track { flex: 1; background: var(--border); border-radius: 6px; height: 8px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 6px; background: var(--accent); width: 0%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+  .score-val { font-size: 14px; font-weight: 700; color: var(--accent); min-width: 32px; text-align: right; }
+  .score-comment { font-size: 13px; color: var(--text-dim); line-height: 1.7; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border); }
+
+  /* 历史记录 */
+  .history-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+  .history-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .history-time { font-size: 11px; color: var(--text-muted); }
+  .history-actions { display: flex; gap: 8px; margin-top: 10px;}
+
+  /* 模态弹窗（恢复会话） */
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(44,31,14,0.6); display: none; align-items: center; justify-content: center; z-index: 1000; }
+  .modal { background: var(--bg-card); padding: 24px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: var(--brown-deep); }
+  .modal-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+  .modal-btns { display: flex; gap: 10px; justify-content: center; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--brown-deep); color: #f5f0e8; padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: all 0.25s; z-index: 999; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .loading-dots span { animation: blink 1.2s infinite; font-size: 20px; }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">AI · 面试工具</div>
+  <h1>AI 面试模拟器</h1>
+  <p>全行业岗位 · 多语种支持 · 智能打分</p>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('setup')">⚙️ 面试设置</button>
+  <button class="tab-btn" onclick="switchTab('history')">📋 面试复盘</button>
+</div>
+
+<div class="main">
+  <div id="tab-setup">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>岗位方向</div>
+      <div class="select-grid select-grid-2">
+        <button class="sel-btn active" onclick="selectField(this,'tech')"><span class="sel-name">💻 技术研发岗</span></button>
+        <button class="sel-btn" onclick="selectField(this,'pm')"><span class="sel-name">📊 产品设计与运营</span></button>
+      </div>
+    </div>
+    
+    <div class="card" id="tech-positions">
+      <div class="card-title"><span class="dot"></span>具体岗位</div>
+      <div class="tag-row" id="position-tags">
+        <button class="tag-btn active" onclick="selectPosition(this,'Java 后端开发')">Java 后端开发</button>
+        <button class="tag-btn" onclick="selectPosition(this,'后端开发 (通用/Go/C++)')">后端开发 (通用/Go/C++)</button>
+        <button class="tag-btn" onclick="selectPosition(this,'前端开发')">前端开发</button>
+        <button class="tag-btn" onclick="selectPosition(this,'大模型应用开发')">大模型应用开发</button>
+        <button class="tag-btn" onclick="selectPosition(this,'算法工程师')">算法工程师</button>
+        <button class="tag-btn" onclick="selectPosition(this,'AI Infra')">AI Infra</button>
+        <button class="tag-btn" onclick="selectPosition(this,'数据工程师')">数据工程师</button>
+        <button class="tag-btn" onclick="selectPosition(this,'DBA/数据库')">DBA/数据库</button>
+        <button class="tag-btn" onclick="selectPosition(this,'测试开发(QA)')">测试开发(QA)</button>
+        <button class="tag-btn" onclick="selectPosition(this,'移动端(iOS/Android)')">移动端(iOS/Android)</button>
+        <button class="tag-btn custom-tag" onclick="toggleCustomPosition()">➕ 自定义</button>
+      </div>
+    </div>
+    
+    <div class="card" id="pm-positions" style="display:none;">
+      <div class="card-title"><span class="dot"></span>具体岗位</div>
+      <div class="tag-row">
+        <button class="tag-btn active" onclick="selectPosition(this,'产品经理')">产品经理</button>
+        <button class="tag-btn" onclick="selectPosition(this,'运营')">运营</button>
+        <button class="tag-btn" onclick="selectPosition(this,'数据分析')">数据分析</button>
+        <button class="tag-btn" onclick="selectPosition(this,'市场营销')">市场营销</button>
+        <button class="tag-btn" onclick="selectPosition(this,'商务拓展')">商务拓展</button>
+        <button class="tag-btn" onclick="selectPosition(this,'UI/UX 设计')">UI/UX 设计</button>
+        <button class="tag-btn" onclick="selectPosition(this,'HR/行政')">HR/行政</button>
+        <button class="tag-btn" onclick="selectPosition(this,'销售/大客户')">销售/大客户</button>
+        <button class="tag-btn custom-tag" onclick="toggleCustomPosition()">➕ 自定义</button>
+      </div>
+    </div>
+
+    <div id="custom-position-container" style="display:none; margin-bottom:16px;">
+      <input type="text" id="custom-position-input" placeholder="输入你想面试的岗位，如：Web3 游戏策划、医疗器械销售..." />
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>面试语言 / 地区场景</div>
+      <div class="tag-row">
+        <button class="tag-btn active" onclick="selectLanguage(this,'中文')">🇨🇳 中文 (默认)</button>
+        <button class="tag-btn" onclick="selectLanguage(this,'全英文')">🇺🇸 全英文 (北美/外企)</button>
+        <button class="tag-btn" onclick="selectLanguage(this,'全日文')">🇯🇵 全日文 (赴日 IT)</button>
+        <button class="tag-btn" onclick="selectLanguage(this,'中英混杂')">🔤 中英混杂 (外企黑话)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>练习模式</div>
+      <div class="select-grid select-grid-2">
+        <button class="sel-btn active" onclick="selectMode(this,'bank')">
+          <span class="sel-name">📚 题库模式</span><span class="sel-desc">逐题作答 + AI 点评</span>
+        </button>
+        <button class="sel-btn" onclick="selectMode(this,'chat')">
+          <span class="sel-name">🤖 AI 对话模式</span><span class="sel-desc">拟真追问 + 综合打分</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="card" id="count-card">
+      <div class="card-title"><span class="dot"></span>题目数量</div>
+      <div class="tag-row">
+        <button class="tag-btn" onclick="selectQCount(this,5)">5 题</button>
+        <button class="tag-btn active" onclick="selectQCount(this,10)">10 题</button>
+        <button class="tag-btn" onclick="selectQCount(this,20)">20 题（含动态出题）</button>
+      </div>
+    </div>
+
+    <div class="card" id="bg-card" style="display:none;">
+      <div class="card-title"><span class="dot"></span>个人背景（可选）</div>
+      <textarea id="bg-input" placeholder="简单介绍背景，如：本科在读，熟悉Python，有一段字节实习经历..."></textarea>
+    </div>
+
+    <div class="key-section">
+      <div class="key-header">
+        <span class="key-title">🔑 API Key</span>
+      </div>
+      <div class="key-input-wrap">
+        <input type="password" id="api-key" placeholder="填入 API Key 启用 AI 能力 (自动保存在本地)" oninput="saveKey()">
+        <button class="key-toggle" onclick="toggleKey()">显示</button>
+      </div>
+      <div class="adv-row">
+        <select id="model-select" style="flex:1;">
+          <option value="gpt-4o-mini">gpt-4o-mini</option>
+          <option value="deepseek-chat">deepseek-chat</option>
+        </select>
+        <input type="text" id="base-url" placeholder="自定义 BaseURL" style="flex:1.5;">
+      </div>
+    </div>
+
+    <button class="start-btn" onclick="startNewInterview()">开始面试</button>
+  </div>
+
+  <div id="tab-bank" style="display:none;">
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+    <div class="card" style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+      <span id="bank-meta" style="font-size:13px;color:var(--brown-mid);font-weight:600;"></span>
+      <button class="ctrl-btn danger" onclick="endInterview()">结束复盘</button>
+    </div>
+    <div id="bank-question-area"></div>
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <button class="q-action-btn" style="flex:1;" onclick="prevQuestion()">← 上一题</button>
+      <button class="q-action-btn primary" style="flex:1;" onclick="nextQuestion()" id="bank-next-btn">下一题 →</button>
+    </div>
+  </div>
+
+  <div id="tab-chat" style="display:none;">
+    <div class="chat-info">
+      <span class="info-dot"></span>
+      <span id="chat-meta-text"></span>
+      <button class="ctrl-btn danger" style="margin-left:auto;" onclick="endInterview()">结束生成复盘</button>
+    </div>
+    <div class="chat-window" id="chat-window"></div>
+    <div class="chat-input-area">
+      <textarea id="chat-input" placeholder="输入回答 (Enter 发送, Shift+Enter 换行)..." onkeydown="handleChatKey(event)"></textarea>
+      <button class="voice-btn" id="voice-btn" onclick="toggleVoice()" title="语音输入">🎤</button>
+      <button class="send-btn" id="send-btn" onclick="sendMessage()">↑</button>
+    </div>
+    <div class="chat-controls">
+      <button class="ctrl-btn" id="stop-btn" style="display:none; border-color:#c0392b; color:#c0392b;" onclick="abortStream()">🛑 停止生成</button>
+      <button class="ctrl-btn" onclick="sendAIMessage('能给我一点提示吗？')">💡 提示</button>
+      <button class="ctrl-btn" onclick="sendAIMessage('跳过这题。')">跳过此题</button>
+      <button class="ctrl-btn primary" onclick="generateScoreCard()" id="score-btn">📊 结束并打分</button>
+    </div>
+    <div class="score-card" id="score-card">
+      <div class="score-header">
+        <span>📊 综合面试评估报告</span>
+        <button class="q-action-btn" onclick="exportMD()">💾 导出为 Markdown</button>
+      </div>
+      <div id="score-content"></div>
+    </div>
+  </div>
+
+  <div id="tab-history" style="display:none;"><div id="history-list"></div></div>
+</div>
+
+<div class="modal-overlay" id="resume-modal">
+  <div class="modal">
+    <div class="modal-title">发现未完成的面试</div>
+    <div class="modal-desc">系统检测到您上次有未完成的模拟面试记录，是否继续？</div>
+    <div class="modal-btns">
+      <button class="ctrl-btn" onclick="clearSession(); document.getElementById('resume-modal').style.display='none';">放弃并重新开始</button>
+      <button class="ctrl-btn primary" style="background:var(--accent);color:#fff;" onclick="restoreSession()">继续上次面试</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// --- 核心配置与题库（100%完全对齐UI标签） ---
+const questionBank = {
+  tech: {
+    'Java 后端开发': [
+      {q:'请简述 JVM 的内存模型（运行时数据区）。', ref:'线程共享：堆（对象实例）、方法区（类信息/常量）。线程私有：虚拟机栈（局部变量/方法出口）、本地方法栈、程序计数器。'},
+      {q:'谈谈你对垃圾回收（GC）机制的理解，CMS 和 G1 的区别？', ref:'GC Root可达性分析。CMS：标记-清除，注重低延迟，有空间碎片。G1：划分Region，标记-整理，可预测停顿时间。'},
+      {q:'HashMap 的底层数据结构是什么？为什么线程不安全？', ref:'数组+链表+红黑树（JDK1.8，链表长度>8转红黑树）。多线程扩容时会导致数据丢失或死循环（1.7头插法），应使用 ConcurrentHashMap。'},
+      {q:'synchronized 和 ReentrantLock 有什么区别？', ref:'都是可重入锁。sync是关键字，自动释放，不可中断；ReentrantLock是API层面，需手动lock/unlock，支持公平锁、中断响应、多条件变量。'},
+      {q:'Spring Boot 的自动装配原理是什么？', ref:'@SpringBootApplication 包含 @EnableAutoConfiguration，通过 SpringFactoriesLoader 读取 META-INF/spring.factories 中的配置类并按条件注入。'},
+      {q:'如何配置和优化 Java 线程池（ThreadPoolExecutor）？', ref:'核心参数：corePoolSize, maxPoolSize, keepAliveTime, workQueue, handler。CPU密集型设为N+1，IO密集型设为2N。'},
+      {q:'MySQL 事务的隔离级别有哪些？默认是什么？', ref:'读未提交、读已提交、可重复读（MySQL默认，通过MVCC解决不可重复读）、串行化。'},
+      {q:'什么是 ThreadLocal？它会导致内存泄漏吗？', ref:'提供线程局部变量，底层基于 ThreadLocalMap。会内存泄漏，因为 Entry 的 Key 是弱引用但 Value 是强引用，使用完必须 remove()。'}
+    ],
+    '后端开发 (通用/Go/C++)': [
+      {q:'请解释一下 HTTP 和 HTTPS 的区别，以及 HTTPS 的工作原理。', ref:'HTTPS在HTTP基础上加入TLS。握手过程：客户端发支持的加密套件 → 服务器回证书 → 验证证书 → 协商会话密钥 → 对称加密通信。'},
+      {q:'数据库索引的原理是什么？什么情况下索引会失效？', ref:'B+树实现。失效场景：对索引列使用函数、隐式类型转换、LIKE以通配符开头、联合索引不满足最左前缀。'},
+      {q:'什么是死锁？如何预防和检测？', ref:'必要条件：互斥、请求保持、不剥夺、环路等待。预防：按序申请资源。检测：资源分配图。'},
+      {q:'Redis缓存穿透、击穿、雪崩的区别及解决方案？', ref:'穿透(查不存在的数据):布隆过滤器/缓存空对象；击穿(热点Key过期):互斥锁/逻辑过期；雪崩(大量Key同时过期):随机过期时间/高可用集群。'},
+      {q:'请说说对微服务架构的理解，及其优缺点。', ref:'独立部署扩展，技术栈灵活；缺点是分布式系统复杂（网络、事务、链路追踪成本高）。'},
+      {q:'请解释一下 CAP 定理，以及 Base 理论。', ref:'CAP：一致性(C)、可用性(A)、分区容错性(P)不可兼得，通常权衡CP或AP。Base：基本可用、软状态、最终一致性，是对CAP的延伸。'},
+      {q:'什么是消息队列？Kafka 为什么吞吐量那么高？', ref:'解耦、异步、削峰。Kafka高吞吐原因：顺序写磁盘、Zero-Copy（零拷贝）技术、批处理与压缩、分区并发。'},
+      {q:'设计一个十万人参与的抢红包系统，你会如何设计？', ref:'前端防抖限流；网关层接入层限流；Redis 预扣减库存（LUA脚本保证原子性）；异步消息队列削峰入库。'}
+    ],
+    '前端开发': [
+      {q:'请解释浏览器的事件循环（Event Loop）机制。', ref:'同步代码 → 清空微任务队列(Promise) → 取一个宏任务(setTimeout) → 清空微任务 → 循环。'},
+      {q:'什么是虚拟 DOM？为什么用它？', ref:'JS对象表示DOM。优势：批量更新(Diff算法)、跨平台。代价是额外内存计算。'},
+      {q:'跨域是什么？有哪些解决方案？', ref:'同源策略限制。解决：CORS(服务端设置头，最佳)、Nginx反向代理(开发期)。'},
+      {q:'Vue/React中的Key有什么作用？', ref:'Diff算法的标识，提升DOM复用率。不要用index作为key。'},
+      {q:'谈谈闭包（Closure）的作用及可能产生的问题。', ref:'函数能够访问其词法作用域外的变量。作用：封装私有变量、柯里化。问题：变量不被释放导致内存泄漏。'},
+      {q:'前端性能优化你通常会做哪些工作？', ref:'网络：CDN、Gzip、HTTP/2、图片懒加载/WebP。构建：Tree-shaking、代码分割。渲染：减少重排重绘、虚拟列表、防抖节流。'},
+      {q:'CSS 中 BFC（块级格式化上下文）是什么？有什么用？', ref:'独立的渲染区域，内部元素不影响外部。作用：清除浮动（解决父元素塌陷）、防止 margin 发生重叠。'},
+      {q:'TypeScript 相比 JavaScript 的核心优势是什么？泛型怎么用？', ref:'静态类型检查，提前暴露错误，更好的代码提示和重构。泛型（<T>）在定义函数/接口时不预先指定具体类型，提升复用性。'},
+      {q:'什么是微前端？你了解哪些微前端框架？', ref:'将巨石应用拆分为多个独立前端应用组合。常见框架：qiankun、micro-app。解决：遗留系统共存、团队独立部署。'},
+      {q:'如何防御 XSS 和 CSRF 攻击？', ref:'XSS（跨站脚本）：对输入内容转义/过滤，开启 CSP。CSRF（跨站请求伪造）：校验 Referer，使用 CSRF Token，设置 SameSite。'}
+    ],
+    '大模型应用开发': [
+      {q:'什么是 RAG（检索增强生成）？请简述其核心架构。', ref:'解决 LLM 幻觉和知识库滞后。流程：文档切分(Chunking) → 向量化(Embedding)存入向量库 → 用户提问转向量 → 检索 Top-K 相似片段 → 拼接入 Prompt 给 LLM 生成回答。'},
+      {q:'在 Prompt Engineering 中，如何减少大模型的幻觉（Hallucination）？', ref:'1. 设定严格角色和边界（"如果你不知道，请回答不知道"）。2. Few-shot 给出正确示例。3. 提供充足的 Context。4. Chain of Thought (CoT) 让其逐步推理。'},
+      {q:'LangChain 或 LlamaIndex 的核心概念有哪些？', ref:'LangChain：LLMs、Prompts、Memory、Indexes、Agents（自主调用工具）、Chains（工作流串联）。'},
+      {q:'什么是 Agent？ReAct 模式是如何工作的？', ref:'Agent 使 LLM 具备使用工具和自主规划能力。ReAct (Reasoning + Acting)：LLM 思考需要做什么 → 选择工具执行 → 观察工具返回结果 → 再次思考，循环直到得出最终答案。'},
+      {q:'向量数据库的索引算法 ANN 原理是什么？', ref:'近似最近邻搜索（ANN）。常用算法如 HNSW（基于多层小世界图），通过在多层图中跳转快速定位相邻向量，平衡查询速度与召回率。'},
+      {q:'如何评估一个 LLM 应用或 RAG 系统的效果？', ref:'用 GPT-4 作为裁判模型（LLM-as-a-Judge）评估准确性、相关性、流畅度。RAG：评估检索召回率（Recall）和生成忠实度。'}
+    ],
+    '算法工程师': [
+      {q:'解释过拟合和欠拟合，及解决方法？', ref:'过拟合：训练好测试差，用正则化、Dropout、早停。欠拟合：增加特征/模型复杂度。'},
+      {q:'Transformer 的核心机制是什么？', ref:'Self-Attention: QK^T / √d_k 计算注意力权重。解决长距离依赖，支持并行。'},
+      {q:'CNN 和 RNN 各自的优缺点是什么？', ref:'CNN 擅长局部特征提取(感受野)，适合图像，可并行；RNN 擅长时间序列，有记忆但存在梯度消失，难并行。'},
+      {q:'解释 ROC 曲线和 AUC 的物理意义？', ref:'ROC横轴FPR，纵轴TPR。AUC是ROC曲线下面积，表示模型将正样本排在负样本前面的概率，对正负样本不平衡不敏感。'},
+      {q:'XGBoost 相比于传统 GBDT 有哪些改进？', ref:'二阶泰勒展开、加入正则项控制树复杂度、支持列抽样、对缺失值有默认处理方向。'},
+      {q:'Word2Vec 的两种架构（CBOW 和 Skip-gram）有什么区别？', ref:'CBOW：通过上下文预测中心词，适合小语料；Skip-gram：通过中心词预测上下文，对生僻词效果好，适合大语料。'},
+      {q:'什么是梯度消失和梯度爆炸？如何解决？', ref:'连乘导致极小或极大。解决：ReLU激活函数、残差连接(ResNet)、BatchNorm、梯度裁剪(Clipping)。'},
+      {q:'K-Means 聚类的 K 值如何选择？', ref:'手肘法（拐点）、轮廓系数法。初始质心敏感可使用 K-Means++。'}
+    ],
+    'AI Infra': [
+      {q:'什么是模型量化？INT8/FP16 量化有什么区别？', ref:'FP16（半精度）：精度损失小，多直接用；INT8：需校准(PTQ)或感知训练(QAT)，内存占小推理快。'},
+      {q:'KV Cache 是什么？PagedAttention 解决了什么问题？', ref:'KV Cache 存历史 Key/Value 避免重复计算。PagedAttention 通过分页内存管理碎片化，极大提升显存利用率和吞吐量。'},
+      {q:'分布式训练中数据并行(DP)和模型并行(MP)的区别？', ref:'DP：每个GPU有完整模型，切分数据，梯度同步(All-Reduce)；MP：切分模型到不同GPU，适合超大模型。'},
+      {q:'ZeRO 优化器（Deepspeed）的三个阶段分别切分了什么？', ref:'ZeRO-1：切分优化器状态；ZeRO-2：切分梯度；ZeRO-3：切分模型参数。极大降低单卡显存。'},
+      {q:'GPU 内存通信中，Ring All-Reduce 算法的工作原理？', ref:'GPU排成环形，分Scatter-Reduce和All-Gather两步，数据分块在环中传递，解决参数服务器带宽瓶颈问题。'},
+      {q:'什么是 TensorRT？它如何加速推理？', ref:'NVIDIA的高性能推理引擎。通过算子融合(Layer Fusion)、动态张量内存、针对特定GPU选择最优内核执行。'},
+      {q:'什么是算子融合（Operator Fusion）？', ref:'将多个顺序执行的细粒度算子（如 Conv + BatchNorm + ReLU）合并为一个算子，减少 GPU 显存读写次数和 Kernel 启动开销。'},
+      {q:'Kubernetes (K8s) 中如何调度和管理 GPU 资源？', ref:'通过 Device Plugin 暴露 GPU 资源给 Kubelet，用户在 Pod 申请 `nvidia.com/gpu` 资源限制。'}
+    ],
+    '数据工程师': [
+      {q:'Spark 和 MapReduce 的区别？', ref:'MR基于磁盘，Spark基于内存(RDD)，速度快百倍，支持DAG操作。'},
+      {q:'什么是数据倾斜？在 Spark 或 Hive 中如何解决？', ref:'某些Key数据量极大导致节点OOM或慢。解决：过滤异常值(null)、两阶段聚合(加随机前缀)、大表MapJoin。'},
+      {q:'实时流处理中，Flink 相比 Spark Streaming 有什么优势？', ref:'Spark是微批处理(秒级)；Flink是真正的事件驱动流处理(毫秒级)，支持精确一次(Exactly-Once)语义。'},
+      {q:'如何保证 Kafka 消息的 Exactly-Once（精确一次）语义？', ref:'幂等性生产者（分配PID防重发） + 事务（保证跨分区写入原子性） + 消费者端手动提交偏移量与去重。'},
+      {q:'数据仓库的分层架构（ODS/DWD/DWS/ADS）有什么意义？', ref:'解耦、复用。ODS原始数据，DWD明细清洗，DWS轻度汇总(宽表)，ADS面向应用的数据集市。'},
+      {q:'什么是 Lambda 架构和 Kappa 架构？', ref:'Lambda：离线和实时双链路，最后合并查询；Kappa：只用实时流计算(Kafka+Flink)处理所有数据。'},
+      {q:'ClickHouse 或 Doris 为什么查询速度那么快？', ref:'列式存储（高压缩比、按需读取字段）、向量化执行引擎（SIMD指令批处理数据）。'},
+      {q:'描述一下你设计过的一条复杂的数据清洗/ETL 管道。', ref:'考察实战：来源接入 -> 脏数据处理(去重/填补) -> 维度打宽 -> 性能优化(解决倾斜) -> 结果输出及监控告警。'}
+    ],
+    'DBA/数据库': [
+      {q:'请解释 MySQL 中的 MVCC（多版本并发控制）机制。', ref:'通过Undo Log和Read View实现。避免了读写锁冲突，实现了可重复读和读已提交隔离级别。'},
+      {q:'如何进行慢查询 SQL 优化？', ref:'开启慢查询日志 → EXPLAIN分析执行计划 → 检查索引是否生效 → 优化表结构/拆分大SQL。'},
+      {q:'数据库主从延迟产生的原因及解决方案？', ref:'原因：主库并发写，从库单线程重放 relay log 慢。解决：开启并行复制、关键业务强制读主库、优化 SQL。'},
+      {q:'B+树和Hash索引的区别与适用场景？', ref:'Hash索引等值查询快(O(1))，但不支持范围查询和排序。B+树支持范围查询、排序，叶子节点带顺序指针。'}
+    ],
+    '测试开发(QA)': [
+      {q:'如何设计一个电商下单接口的测试用例？', ref:'正向(库存足/金额对)；逆向(超卖/负数/并发)；安全测试(越权)；性能压测(QPS)。'},
+      {q:'请简述你对 CI/CD 流水线的理解及常用工具。', ref:'持续集成/部署。代码提交触发自动化测试、代码扫描(SonarQube)、构建镜像、自动部署。常用 Jenkins、GitLab CI。'},
+      {q:'UI 自动化测试中，元素定位不到的常见原因及解决？', ref:'原因：加载慢、在iframe中、动态ID。解决：显示等待(WebDriverWait)、切换iframe、用XPath相对路径或CSS选择器。'},
+      {q:'如何做性能压测？JMeter 中吞吐量和并发用户数的区别？', ref:'并发数是同时发起请求的用户量，吞吐量(QPS/TPS)是系统每秒处理的请求数。系统到达瓶颈前，两者正相关。'},
+      {q:'什么是 Mock 测试？什么时候应该使用 Mock？', ref:'模拟复杂或不可用的外部依赖（如第三方支付接口）。在单元测试或依赖系统未开发完成时使用。'},
+      {q:'如何保证接口自动化测试的稳定性（防抖）？', ref:'数据隔离（每次测试生成独立测试数据并清理）、重试机制、去除对执行顺序的强依赖。'},
+      {q:'白盒测试和黑盒测试的区别？', ref:'黑盒关注功能和输入输出（如等价类划分）；白盒关注内部代码逻辑结构（语句覆盖、分支覆盖）。'},
+      {q:'在敏捷开发中，测试人员的职责发生了什么变化？', ref:'测试前移（参与需求评审），编写自动化脚本融入流水线，从单一的"找Bug"变为"质量保障工程师(QA)"。'}
+    ],
+    '移动端(iOS/Android)': [
+      {q:'Android的Activity生命周期/iOS的ViewController生命周期是怎样的？', ref:'考察基础生命周期函数及在转场、后台、销毁时的调用顺序。'},
+      {q:'移动端内存泄漏常见原因及排查工具？', ref:'原因：单例/静态变量持有Context，异步任务未取消，闭包。工具：LeakCanary / Instruments。'},
+      {q:'Flutter/React Native 与原生开发的性能差异原因？', ref:'跨平台框架依赖JS Bridge通信或自带渲染引擎（Skia）。原生直接调用系统UI层，性能上限更高。'},
+      {q:'App 启动速度优化的常见思路？', ref:'异步初始化非必要组件、懒加载、减少主线程阻塞、优化布局层级、AOT预编译。'}
+    ]
+  },
+  pm: {
+    '产品经理': [
+      {q:'如果 DAU 突然下降 30%，如何排查？', ref:'外部(节假日/竞品/政策) → 技术(宕机/Bug/埋点错) → 数据(分渠道/平台/模块拆解) → 用户反馈定位。'},
+      {q:'如何做竞品分析？', ref:'目标用户定位 → 核心功能结构 → 用户体验交互 → 商业变现模式 → 数据表现。找差异化机会，忌盲目抄袭。'},
+      {q:'如何给积压的多个需求排优先级？', ref:'Kano模型（基本/期望/兴奋需求）、RICE打分（覆盖度×影响力×信心÷工作量）、紧急重要四象限。'},
+      {q:'什么是 MVP（最小可行性产品）？你做过的 MVP 案例？', ref:'用最低成本验证核心商业假设的早期版本。不仅是半成品，必须闭环验证用户是否愿意买单/使用。'},
+      {q:'在推进项目时，研发评估工期过长，你如何协调？', ref:'了解技术难点在哪；探讨是否有替代方案或砍掉边缘功能；分期上线（先上核心）；协调额外资源。不要直接压研发。'},
+      {q:'产品经理如何做数据埋点设计？', ref:'定义业务目标 -> 拆解核心指标 -> 确定事件(Event)和属性(Property) -> 整理埋点需求文档(DRD)交由开发。'},
+      {q:'你最常用/最喜欢的一款 App 是什么？它的核心痛点和改进建议？', ref:'考察产品感。需指出明确的场景痛点，并给出逻辑自洽的改进方案，而非单纯的 UI 吐槽。'},
+      {q:'B 端产品和 C 端产品设计的最大区别是什么？', ref:'C端：重体验、情绪价值、拉新裂变、决策链短。B端：重业务流程效率、权限角色、降本增效、决策链长(买单者非使用者)。'}
+    ],
+    '运营': [
+      {q:'如何从0搭建用户增长体系？', ref:'AARRR模型：获取(拉新)、激活(新客转化)、留存(防流失)、变现(付费)、传播(裂变)。先修留存再做拉新。'},
+      {q:'如何制定一次大促活动（如双11）的运营方案？', ref:'目标拆解(GMV/拉新) -> 节奏划分(蓄水/预热/爆发/返场) -> 利益点设计 -> 渠道分发 -> 备案与复盘。'},
+      {q:'社群运营的核心指标有哪些？如何保持社群活跃度？', ref:'指标：入群率、活跃度、转化率、退群率。保持活跃：入群仪式感、定期固定福利(秒杀)、话题引导、核心KOL/水军带动。'},
+      {q:'用户流失预警模型如何建立？', ref:'定义流失(如30天未登录) -> 找流失前置特征(如下单频次骤降) -> 建立规则或算法模型 -> 针对性触达挽回(发券/关怀)。'},
+      {q:'在预算有限的情况下，如何做到冷启动拉新？', ref:'内容营销(自媒体SEO矩阵)、寻找种子用户定向邀请、裂变设计(老带新双边奖励)、异业合作资源置换。'},
+      {q:'如何写一篇高转化率的公众号/小红书推文？', ref:'爆款标题(引发好奇/痛点) -> 场景带入引起共鸣 -> 提出解决方案(植入产品) -> 限时限量促单(CTA)。'}
+    ],
+    '数据分析': [
+      {q:'用 SQL 找出连续 3 天登录的用户？', ref:'用 ROW_NUMBER() 排序，日期减去排序号得到基准日，按基准日GROUP BY HAVING COUNT>=3。'},
+      {q:'什么是留存率？如何计算次日留存和 7 日留存？', ref:'次日留存 = 第一天新增用户中第二天活跃的人数 / 第一天总新增人数。衡量产品初期吸引力和健康度。'},
+      {q:'A/B 测试中有哪些常见的陷阱？如何避免？', ref:'样本量不足、辛普森悖论（分层看和整体看结论相反）、新奇效应。需提前算好最小样本量，跑完周期再看结果。'},
+      {q:'漏斗分析中，发现某一步骤流失率极高，你会怎么分析？', ref:'确认数据/埋点准度 -> 细分维度（机型/渠道/新老用户）看流失规律 -> 体验走查（UI引导是否清晰、网络是否卡顿）-> 假设验证。'},
+      {q:'什么是辛普森悖论？在数据分析中如何避免？', ref:'总体趋势和分组趋势完全相反（通常由于各组样本量差异悬殊导致）。避免：下钻到更细致、同质的群体维度去看数据。'},
+      {q:'如何向不懂技术的业务方解释复杂的数据分析结论？', ref:'结论先行；使用业务语言和图表直观展示；指出原因；给出可落地的行动建议（Actionable Insights）。'}
+    ],
+    '市场营销': [
+      {q:'如何衡量一次市场活动的效果？你会关注哪些指标？', ref:'漏斗模型：曝光量 → 点击率（CTR）→ 转化率 → ROI。短期：直接销售/注册/下载数据。长期：品牌认知度/用户LTV。需要对照组（控制变量）才能准确归因。'}
+    ],
+    '商务拓展': [
+      {q:'如何快速判断一个合作机会是否值得推进？', ref:'快速评估框架：战略契合度（是否符合公司方向）→ 市场规模（TAM/SAM/SOM）→ 可行性（资源/时间/技术）→ 竞争壁垒 → 风险。用 2×2 矩阵快速决策。'}
+    ],
+    'UI/UX 设计': [
+      {q:'请说说你对 Design System (设计规范) 的理解。', ref:'保证产品视觉与交互的一致性，提升设计与开发的协作效率。包含颜色、排版、组件库等。'}
+    ],
+    'HR/行政': [
+      {q:'面对技术团队的高离职率，你会采取什么措施？', ref:'数据分析(离职面谈/员工调研) → 发现痛点(薪酬/晋升/Leader管理) → 制定保留策略(如优化晋升通道、团建)。'}
+    ],
+    '销售/大客户': [
+      {q:'面对一个极具潜力的客户，但他觉得我们产品价格太贵，你如何应对？', ref:'挖掘真实抗拒点；通过ROI算账强调价值而非价格；引入成功案例证明长期收益；考虑非资金层面的让步。'}
+    ]
+  }
+};
+
+// --- 全局状态 (Session) ---
+let session = {
+  mode: 'bank', field: 'tech', position: '后端开发 (通用/Go/C++)', qCount: 10,
+  language: '中文', round: '初试/模拟',
+  currentQ: 0, questions: [], answersState: [], chatHistory: []
+};
+let abortController = null;
+let isGenerating = false;
+let synthesis = window.speechSynthesis;
+
+// 初始化
+window.addEventListener('DOMContentLoaded', () => {
+  const key = localStorage.getItem('cw_api_key');
+  if (key) document.getElementById('api-key').value = key;
+  
+  const savedSession = localStorage.getItem('interview_session');
+  if (savedSession) {
+    document.getElementById('resume-modal').style.display = 'flex';
+  }
+});
+
+function saveKey() { localStorage.setItem('cw_api_key', document.getElementById('api-key').value.trim()); }
+function toggleKey() {
+  const el = document.getElementById('api-key');
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// --- 状态自动保存 ---
+function saveSession() { localStorage.setItem('interview_session', JSON.stringify(session)); }
+function clearSession() { localStorage.removeItem('interview_session'); }
+function restoreSession() {
+  document.getElementById('resume-modal').style.display = 'none';
+  session = JSON.parse(localStorage.getItem('interview_session'));
+  if (session.mode === 'bank') {
+    switchTab('bank');
+    renderBankQuestion();
+  } else {
+    switchTab('chat');
+    renderChatHistory();
+  }
+  showToast('已恢复上次进度');
+}
+
+// --- UI 切换 ---
+function switchTab(tab) {
+  ['setup','bank','chat','history'].forEach(t => document.getElementById('tab-'+t).style.display = 'none');
+  document.getElementById('tab-'+tab).style.display = 'block';
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&tab!=='history')||(i===1&&tab==='history')));
+  if (tab === 'history') renderHistoryList();
+}
+
+function selectField(el, val) {
+  document.querySelectorAll('.card:nth-child(1) .sel-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  session.field = val;
+  document.getElementById('tech-positions').style.display = val==='tech'?'':'none';
+  document.getElementById('pm-positions').style.display = val==='pm'?'':'none';
+  // Reset specific position
+  document.getElementById('custom-position-container').style.display = 'none';
+  const tags = document.querySelectorAll(`#${val==='tech'?'tech':'pm'}-positions .tag-btn:not(.custom-tag)`);
+  document.querySelectorAll(`#${val==='tech'?'tech':'pm'}-positions .tag-btn`).forEach(t=>t.classList.remove('active'));
+  if(tags.length > 0) {
+    tags[0].classList.add('active');
+    session.position = tags[0].textContent.trim();
+  }
+}
+
+function selectPosition(el, val) {
+  el.closest('.tag-row').querySelectorAll('.tag-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); session.position = val;
+  document.getElementById('custom-position-container').style.display = 'none';
+}
+
+function toggleCustomPosition() {
+  const currentArea = session.field === 'tech' ? 'tech-positions' : 'pm-positions';
+  document.querySelectorAll(`#${currentArea} .tag-btn:not(.custom-tag)`).forEach(b=>b.classList.remove('active'));
+  document.querySelector(`#${currentArea} .custom-tag`).classList.add('active');
+  document.getElementById('custom-position-container').style.display = 'block';
+  document.getElementById('custom-position-input').focus();
+}
+
+function selectLanguage(el, val) {
+  el.closest('.tag-row').querySelectorAll('.tag-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); session.language = val;
+}
+
+function selectMode(el, val) {
+  el.closest('.select-grid').querySelectorAll('.sel-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); session.mode = val;
+  document.getElementById('count-card').style.display = val==='bank'?'':'none';
+  document.getElementById('bg-card').style.display = val==='chat'?'':'none';
+}
+
+function selectQCount(el, val) {
+  el.closest('.tag-row').querySelectorAll('.tag-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active'); session.qCount = val;
+}
+
+// --- 启动面试 ---
+function startNewInterview() {
+  const key = document.getElementById('api-key').value.trim();
+  
+  // 处理自定义岗位
+  const customContainer = document.getElementById('custom-position-container');
+  const isCustom = customContainer.style.display !== 'none';
+  if (isCustom) {
+      const customVal = document.getElementById('custom-position-input').value.trim();
+      if (!customVal) { showToast('请输入自定义岗位名称'); return; }
+      session.position = customVal;
+  }
+  
+  const isForeign = session.language !== '中文';
+
+  if (!key && (session.mode === 'chat' || isCustom || isForeign)) {
+    showToast('AI对话 / 外语 / 自定义岗位，需配置 API Key！'); return;
+  }
+  
+  clearSession();
+  session.currentQ = 0;
+  session.answersState = [];
+  session.chatHistory = [];
+  
+  if (session.mode === 'bank') {
+    let bank = [];
+    if (!isCustom && !isForeign) {
+        bank = questionBank[session.field]?.[session.position] || [];
+    }
+    session.questions = [...bank].sort(() => Math.random() - 0.5).slice(0, session.qCount);
+    session.answersState = new Array(session.qCount).fill(null).map(()=>({ userAns:'', aiReview:'' }));
+    switchTab('bank');
+    renderBankQuestion();
+  } else {
+    switchTab('chat');
+    document.getElementById('score-card').classList.remove('show');
+    document.getElementById('chat-window').innerHTML = '';
+    const bg = document.getElementById('bg-input').value.trim();
+    const sysPrompt = `你是一位资深 ${session.position} 面试官。${bg ? `候选人背景：${bg}` : ''}
+【核心要求】请严格使用 ${session.language} 进行提问和反馈，禁止使用其他语言。
+规则：
+1. 每次只问一个问题。结合上一轮回答进行深度追问（使用STAR法则挖掘细节）。
+2. 如果候选人回答不知道，给出一点提示引导，不要直接挂断。
+3. 保持对话自然、适度施压，扮演真实面试官。`;
+    session.chatHistory = [{ role: 'system', content: sysPrompt }];
+    sendAIMessage(`Hello，我们可以开始面试了吗？请先做一个简短的自我介绍。 (要求: 请使用 ${session.language} 回复)`);
+  }
+  saveSession();
+}
+
+// --- 题库模式渲染 ---
+async function renderBankQuestion() {
+  document.getElementById('progress-bar').style.width = ((session.currentQ+1)/session.qCount*100) + '%';
+  document.getElementById('bank-meta').textContent = `${session.position} (${session.language}) · 第 ${session.currentQ+1} / ${session.qCount} 题`;
+  
+  // 动态兜底生成题库
+  if (session.currentQ >= session.questions.length && session.questions.length < session.qCount) {
+    await fetchDynamicQuestion();
+  }
+  
+  const q = session.questions[session.currentQ];
+  const state = session.answersState[session.currentQ];
+  
+  const area = document.getElementById('bank-question-area');
+  area.innerHTML = `
+    <div class="question-card">
+      <div class="q-header">
+        <span class="q-num">Q${session.currentQ+1}</span>
+      </div>
+      <div class="q-text">${DOMPurify.sanitize(marked.parse(q.q))}</div>
+      <div class="q-answer-area">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">你的草稿/回答（支持自动保存）</div>
+        <textarea id="my-answer" oninput="saveCurrentAnswer()">${state.userAns}</textarea>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="q-action-btn" onclick="document.getElementById('q-ref').classList.toggle('show')">👁️ 参考思路</button>
+        <button class="q-action-btn primary" id="ai-review-btn" onclick="getBankAIReview()">🤖 AI 深度点评</button>
+      </div>
+      <div class="q-ref md-content" id="q-ref" style="margin-top:10px;">${DOMPurify.sanitize(marked.parse(q.ref || '暂无参考'))}</div>
+      <div class="ai-review md-content ${state.aiReview ? 'show' : ''}" id="ai-review">
+        <div class="ai-review-header"><span>AI 面试官点评</span></div>
+        <div id="ai-review-text">${state.aiReview ? DOMPurify.sanitize(marked.parse(state.aiReview)) : ''}</div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('bank-next-btn').textContent = session.currentQ === session.qCount - 1 ? '完成复盘' : '下一题 →';
+}
+
+function saveCurrentAnswer() {
+  session.answersState[session.currentQ].userAns = document.getElementById('my-answer').value;
+  saveSession();
+}
+
+function prevQuestion() { if(session.currentQ > 0) { session.currentQ--; renderBankQuestion(); } }
+function nextQuestion() {
+  if (session.currentQ < session.qCount - 1) { session.currentQ++; renderBankQuestion(); }
+  else { endInterview(); }
+}
+
+// 动态题库生成
+async function fetchDynamicQuestion() {
+  const key = document.getElementById('api-key').value.trim();
+  document.getElementById('bank-question-area').innerHTML = '<div style="text-align:center;padding:40px;color:var(--accent);">🤖 正在为您实时生成新的面试题...</div>';
+  const usedQs = session.questions.map(q=>q.q).join('；');
+  const prompt = `你是一个面试官。当前岗位：${session.position}。面试语言要求：${session.language}。
+我已经问了以下问题：${usedQs || '无'}。请生成第 ${session.currentQ+1} 题，要求不同于前面的问题，并附带参考思路。
+请严格输出JSON格式，不要有任何 Markdown 标记或多余文本：
+{"q": "问题内容(${session.language})", "ref": "参考答案要点(${session.language})"}`;
+  
+  try {
+    const res = await callAPI(prompt, key, false);
+    const match = res.match(/\{[\s\S]*\}/);
+    if(match) {
+      const data = JSON.parse(match[0]);
+      session.questions.push({q: data.q, ref: data.ref});
+    } else throw new Error('JSON解析失败');
+  } catch(e) {
+    session.questions.push({
+      q: `动态生成失败，请描述一下你做过最难的项目？ (Language: ${session.language})`, 
+      ref: "使用 STAR 法则作答。"
+    });
+  }
+}
+
+// 题库模式 AI点评
+async function getBankAIReview() {
+  const key = document.getElementById('api-key').value.trim();
+  if(!key) { showToast('需配置 API Key'); return; }
+  const ans = document.getElementById('my-answer').value.trim();
+  if(!ans) { showToast('请先写点思路'); return; }
+  
+  const btn = document.getElementById('ai-review-btn');
+  const textEl = document.getElementById('ai-review-text');
+  document.getElementById('ai-review').classList.add('show');
+  textEl.innerHTML = '<span class="loading-dots"><span>·</span><span>·</span><span>·</span></span>';
+  btn.disabled = true;
+  
+  const q = session.questions[session.currentQ];
+  const prompt = `面试题：${q.q}\n候选人回答：${ans}\n请用 Markdown 格式，严格使用 ${session.language} 语言，从核心要点、优点、遗漏点三个维度进行犀利点评。`;
+  
+  try {
+    const review = await callAPI(prompt, key, true, (text) => {
+      textEl.innerHTML = DOMPurify.sanitize(marked.parse(text));
+    });
+    session.answersState[session.currentQ].aiReview = review;
+    saveSession();
+  } catch(e) {
+    if(e.name!=='AbortError') textEl.textContent = '请求失败：'+e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// --- 聊天模式逻辑 ---
+function renderChatHistory() {
+  const w = document.getElementById('chat-window');
+  w.innerHTML = '';
+  document.getElementById('chat-meta-text').textContent = `${session.position} (${session.language}) · AI 面试`;
+  session.chatHistory.forEach(msg => {
+    if (msg.role !== 'system') appendMsg(msg.role==='user'?'user':'ai', msg.content);
+  });
+  scrollChat();
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+async function sendMessage() {
+  if(isGenerating) return;
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  appendMsg('user', text);
+  session.chatHistory.push({ role:'user', content:text });
+  saveSession();
+  await sendAIMessage();
+}
+
+async function sendAIMessage(overridePrompt = null) {
+  const key = document.getElementById('api-key').value.trim();
+  if (!key) { showToast('请配置 API Key'); return; }
+  
+  if (overridePrompt) {
+    appendMsg('user', overridePrompt);
+    session.chatHistory.push({ role:'user', content:overridePrompt });
+  }
+
+  isGenerating = true;
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('stop-btn').style.display = 'block';
+  
+  const bubble = appendMsg('ai', '<span class="loading-dots"><span>·</span><span>·</span><span>·</span></span>');
+  const textEl = bubble.querySelector('.msg-bubble');
+  
+  // 滑动窗口策略：保留 System，发送最近 8 条
+  let payload = [...session.chatHistory];
+  if(payload.length > 9) payload = [payload[0], ...payload.slice(-8)];
+
+  try {
+    const fullText = await callAPI(payload, key, true, (text) => {
+      textEl.innerHTML = DOMPurify.sanitize(marked.parse(text));
+      // 为 AI 气泡添加语音播报按钮
+      if(!textEl.querySelector('.tts-btn')) {
+         textEl.innerHTML += `<button class="tts-btn" onclick="speakText(this)">🔊 朗读</button>`;
+      }
+      scrollChat();
+    });
+    session.chatHistory.push({ role:'assistant', content:fullText });
+    saveSession();
+  } catch(e) {
+    if(e.name !== 'AbortError') textEl.textContent = '网络错误：'+e.message;
+  } finally {
+    isGenerating = false;
+    document.getElementById('send-btn').disabled = false;
+    document.getElementById('stop-btn').style.display = 'none';
+  }
+}
+
+function appendMsg(role, text) {
+  const w = document.getElementById('chat-window');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  const displayHtml = text.includes('loading-dots') ? text : DOMPurify.sanitize(marked.parse(text));
+  div.innerHTML = `
+    <div class="msg-avatar ${role}-avatar">${role==='ai'?'面':'我'}</div>
+    <div class="msg-bubble ${role}-bubble md-content">${displayHtml}
+      ${role==='ai' && !text.includes('loading-dots') ? `<button class="tts-btn" onclick="speakText(this)">🔊 朗读</button>` : ''}
+    </div>
+  `;
+  w.appendChild(div);
+  scrollChat();
+  return div;
+}
+function scrollChat() { const w=document.getElementById('chat-window'); w.scrollTop=w.scrollHeight; }
+
+function abortStream() {
+  if(abortController) abortController.abort();
+  isGenerating = false;
+  document.getElementById('stop-btn').style.display = 'none';
+  document.getElementById('send-btn').disabled = false;
+}
+
+// --- 雷达图/打分面板 (拦截JSON) ---
+async function generateScoreCard() {
+  if (isGenerating) return;
+  const key = document.getElementById('api-key').value.trim();
+  document.getElementById('score-card').classList.add('show');
+  document.getElementById('score-btn').disabled = true;
+  document.getElementById('score-content').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">正在分析您的面试表现...</div>';
+  
+  const prompt = `面试结束。请根据整个对话记录，评估候选人。
+严格以纯 JSON 格式返回，包含四个维度的分数(0-100)和总评，格式如下：
+{"communication": 85, "technical": 80, "logical": 90, "overall": 85, "comment": "综合评价内容(${session.language})..."}`;
+  
+  let payload = [...session.chatHistory, {role:'user', content:prompt}];
+  if(payload.length > 15) payload = [payload[0], ...payload.slice(-14)];
+
+  try {
+    const res = await callAPI(payload, key, false);
+    const match = res.match(/\{[\s\S]*\}/);
+    if(match) {
+      const data = JSON.parse(match[0]);
+      document.getElementById('score-content').innerHTML = `
+        <div class="score-row"><div class="score-label">专业深度</div><div class="score-track"><div class="score-fill" style="width:${data.technical}%"></div></div><div class="score-val">${data.technical}</div></div>
+        <div class="score-row"><div class="score-label">逻辑思维</div><div class="score-track"><div class="score-fill" style="width:${data.logical}%"></div></div><div class="score-val">${data.logical}</div></div>
+        <div class="score-row"><div class="score-label">表达沟通</div><div class="score-track"><div class="score-fill" style="width:${data.communication}%"></div></div><div class="score-val">${data.communication}</div></div>
+        <div class="score-row" style="margin-top:20px;"><div class="score-label" style="color:var(--accent);">综合得分</div><div class="score-track"><div class="score-fill" style="width:${data.overall}%;background:var(--red);"></div></div><div class="score-val" style="font-size:18px;">${data.overall}</div></div>
+        <div class="score-comment md-content">${DOMPurify.sanitize(marked.parse(data.comment))}</div>
+      `;
+      session.chatHistory.push({ role:'system', content: `[打分结果] 综合得分：${data.overall}\n${data.comment}`});
+    } else throw new Error('未解析到成绩');
+  } catch(e) {
+    document.getElementById('score-content').innerHTML = `<div style="color:#c0392b">打分失败: ${e.message}</div>`;
+  }
+}
+
+// --- 语音支持 (Web Speech API) ---
+let recognition;
+function toggleVoice() {
+  const btn = document.getElementById('voice-btn');
+  const input = document.getElementById('chat-input');
+  
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    showToast('当前浏览器不支持语音输入'); return;
+  }
+  
+  if(btn.classList.contains('recording')) {
+    recognition.stop();
+    btn.classList.remove('recording');
+    return;
+  }
+  
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRec();
+  recognition.lang = session.language === '全英文' ? 'en-US' : (session.language === '全日文' ? 'ja-JP' : 'zh-CN');
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  
+  recognition.onstart = () => { btn.classList.add('recording'); input.placeholder = '正在聆听...'; };
+  recognition.onresult = (e) => {
+    let text = '';
+    for(let i=0; i<e.results.length; i++) text += e.results[i][0].transcript;
+    input.value = text;
+  };
+  recognition.onerror = () => { showToast('麦克风访问失败'); btn.classList.remove('recording'); };
+  recognition.onend = () => { btn.classList.remove('recording'); input.placeholder = '输入回答 (Enter 发送)...'; };
+  recognition.start();
+}
+
+function speakText(btnEl) {
+  if(!synthesis) { showToast('浏览器不支持语音播报'); return; }
+  synthesis.cancel(); // 停止当前正在读的
+  
+  const bubble = btnEl.closest('.msg-bubble');
+  const clone = bubble.cloneNode(true);
+  const ttsBtn = clone.querySelector('.tts-btn');
+  if(ttsBtn) ttsBtn.remove();
+  
+  const text = clone.textContent.trim();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = session.language === '全英文' ? 'en-US' : (session.language === '全日文' ? 'ja-JP' : 'zh-CN');
+  utter.rate = 1.1;
+  synthesis.speak(utter);
+}
+
+// --- 统一 Fetch API ---
+async function callAPI(payload, key, isStream, onChunk) {
+  const baseUrl = (document.getElementById('base-url').value.trim() || 'https://api.openai.com/v1').replace(/\/+$/, '');
+  const model = document.getElementById('model-select').value;
+  abortController = new AbortController();
+  
+  const messages = Array.isArray(payload) ? payload : [{role:'user', content:payload}];
+  
+  const resp = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify({ model, messages, stream: isStream, max_tokens: 800, temperature: 0.7 }),
+    signal: abortController.signal
+  });
+  if (!resp.ok) throw new Error(`API ${resp.status}`);
+  
+  if (!isStream) {
+    const json = await resp.json();
+    return json.choices[0].message.content;
+  }
+  
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '', fullText = '';
+  
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.trim().startsWith('data: ')) continue;
+      const data = line.trim().slice(6);
+      if (data === '[DONE]') break;
+      try {
+        const json = JSON.parse(data);
+        fullText += json.choices?.[0]?.delta?.content || '';
+        if(onChunk) onChunk(fullText);
+      } catch {}
+    }
+  }
+  return fullText;
+}
+
+// --- 结束与导出 ---
+function endInterview() {
+  // 深拷贝保存历史
+  const record = {
+    id: Date.now(), time: new Date().toLocaleString('zh-CN'),
+    mode: session.mode, position: session.position, language: session.language,
+    data: JSON.parse(JSON.stringify(session)) // Deep copy
+  };
+  let hist = JSON.parse(localStorage.getItem('interview_history_v4') || '[]');
+  hist.unshift(record);
+  localStorage.setItem('interview_history_v4', JSON.stringify(hist.slice(0,20)));
+  clearSession();
+  switchTab('setup');
+  showToast('面试数据已存档至历史记录');
+}
+
+function exportMD() {
+  let md = `# AI 面试复盘报告\n\n**岗位**：${session.position} | **语言**：${session.language} | **时间**：${new Date().toLocaleString()}\n\n---\n\n`;
+  if(session.mode === 'bank') {
+    session.questions.forEach((q, i) => {
+      const state = session.answersState[i];
+      md += `### Q${i+1}: ${q.q}\n\n**我的回答**：\n${state.userAns || '未作答'}\n\n**参考思路**：\n${q.ref}\n\n**AI点评**：\n${state.aiReview || '无'}\n\n---\n`;
+    });
+  } else {
+    session.chatHistory.forEach(msg => {
+      if(msg.role==='system') return;
+      md += `**${msg.role==='ai'||msg.role==='assistant'?'🤖 面试官':'👤 我'}**：\n${msg.content}\n\n`;
+    });
+  }
+  const blob = new Blob([md], {type: 'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `面试复盘_${session.position}.md`;
+  a.click();
+}
+
+function renderHistoryList() {
+  const el = document.getElementById('history-list');
+  const hist = JSON.parse(localStorage.getItem('interview_history_v4') || '[]');
+  if (!hist.length) { el.innerHTML = '<div class="history-empty">暂无历史记录</div>'; return; }
+  el.innerHTML = hist.map((r,i) => `
+    <div class="history-item">
+      <div class="history-meta">
+        <div class="history-tags">
+          <span class="history-tag">${r.position}</span>
+          <span class="history-tag">${r.language || '中文'}</span>
+          <span class="history-tag">${r.mode==='bank'?'题库':'对话'}</span>
+        </div>
+        <span class="history-time">${r.time}</span>
+      </div>
+      <div class="history-actions">
+        <button class="history-btn del" onclick="deleteHistory(${i})">删除记录</button>
+      </div>
+    </div>
+  `).join('');
+}
+function deleteHistory(idx) {
+  let hist = JSON.parse(localStorage.getItem('interview_history_v4') || '[]');
+  hist.splice(idx, 1);
+  localStorage.setItem('interview_history_v4', JSON.stringify(hist));
+  renderHistoryList();
+}
+</script>
+</body>
+</html>
