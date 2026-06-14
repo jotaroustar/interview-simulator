@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 面试模拟器 - 终极版 (本地化部署)</title>
+<title>AI 面试模拟器 | jotarou.com</title>
 <script src="./marked.min.js"></script>
 <script src="./purify.min.js"></script>
 <style>
@@ -323,7 +323,6 @@
           <option value="gpt-4o-mini">gpt-4o-mini</option>
           <option value="deepseek-chat">deepseek-chat</option>
         </select>
-        <input type="text" id="base-url" placeholder="自定义 BaseURL" style="flex:1.5;">
       </div>
     </div>
 
@@ -961,7 +960,7 @@ function speakText(btnEl) {
 
 // --- 统一 Fetch API ---
 async function callAPI(payload, key, isStream, onChunk) {
-  const baseUrl = (document.getElementById('base-url').value.trim() || 'https://api.openai.com/v1').replace(/\/+$/, '');
+  const baseUrl = 'https://jotarou.com/v1';
   const model = document.getElementById('model-select').value;
   abortController = new AbortController();
   
