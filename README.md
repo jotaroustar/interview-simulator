@@ -89,3 +89,12 @@
 ├── index.html        # 主程序文件 (集成古典雅致的微醺棕皮肤 UI)
 ├── marked.min.js     # 本地化 Markdown 解析库
 └── purify.min.js     # 本地化 XSS 攻击防护库
+
+<p align="center">
+  Made with ❤️ by <a href="https://github.com/jotaroustar">jotaroustar</a>
+</p>
+
+<p align="center" style="font-size: 11px; color: #7a6550;">
+  Copyright © 2026 jotarou.com. All rights reserved.<br>
+  未经授权许可，禁止直接复制本系统源码用于任何形式的商业产品或盈利性服务。
+</p>
